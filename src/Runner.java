@@ -6,7 +6,7 @@ public class Runner {
 
     public static void main(String[] args) {
 
-        new Blackjack().playRound(50);
+        new Blackjack().playRound();
 
 //        Scanner in = new Scanner(System.in);
 //
