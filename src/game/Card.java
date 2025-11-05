@@ -2,25 +2,30 @@ package game;
 
 public abstract class Card {
 
-    protected final String value;
-    protected final String suit;
+    public enum Suit {
+        HEARTS, SPADES, CLUBS, DIAMONDS
+    }
+
+    public enum Rank {
+        TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN, JACK, QUEEN, KING, ACE
+    }
+
+    protected final Rank rank;
+    protected final Suit suit;
 
     protected int intValue;
 
-    public Card(String value, String suit) {
-
-        this.value = value;
+    public Card(Rank rank, Suit suit) {
+        this.rank = rank;
         this.suit = suit;
-
         setIntValue();
-
     }
 
-    public String getValue() {
-        return value;
+    public Rank getRank() {
+        return rank;
     }
 
-    public String getSuit() {
+    public Suit getSuit() {
         return suit;
     }
 
@@ -32,8 +37,6 @@ public abstract class Card {
 
     @Override
     public String toString() {
-
-        return value + " of " + suit;
-
+        return rank + " of " + suit;
     }
 }
