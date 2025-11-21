@@ -12,44 +12,85 @@ public class Blackjack {
     public static final int DEALER_HIT_THRESHOLD = 17;
     public static final int STARTING_MONEY = 100;
     public static final int BLACKJACK_SCORE = 21;
+    private static final Scanner scanner = new Scanner(System.in);
 
-    public static void play(Scanner scanner) {
+    public static void play() {
         final ArrayList<BlackjackCard> deck = BlackjackCard.createSortedDeck();
         Player user = new Player();
         Player dealer = new Player();
-        playRound(scanner, user, dealer, deck);
+        playRound(user, dealer, deck);
     }
 
-    // TODO: temporary bet variable
-    public static void playRound(Scanner scanner, Player user, Player dealer, ArrayList<BlackjackCard> deck) {
-        int bet = 0;
-        while (bet <= 0 || bet > user.getMoney()) {
-            System.out.println("You have $" + user.getMoney());
-            System.out.print("Please enter a bet (at least $1): ");
-            bet = scanner.nextInt();
-            scanner.nextLine();
-        }
-        user.removeMoney(bet);
-
-        // deal cards
+    public static void playRound(Player user, Player dealer, ArrayList<BlackjackCard> deck) {
+        int bet = getBet(user);
         for (int i = 0; i < 2; i++) {
             user.drawCard(deck);
             dealer.drawCard(deck);
         }
+        printDealerHand(dealer.getHand(), true);
+        boolean playerBusted = doPlayerTurn(user, deck);
+        if (!playerBusted) {
+            doDealerTurn(dealer, deck);
+            payout(user, dealer, bet);
+        } else {
+            System.out.println("You busted! No payout.");
+        }
+    }
 
-        // print the dealer's first card only
-        System.out.println("Dealer's hand: " + dealer.getHand().getCards().getFirst().toString() + ", MYSTERY");
+    private static void payout(Player user, Player dealer, int bet) {
+        int userHandValue = user.getHand().getValue();
+        if (dealer.isBusted() && userHandValue == BLACKJACK_SCORE) {
+            System.out.println("Blackjack! You win $" + (bet * 3) + "! (3x payout)");
+            user.addMoney(bet * 3);
+        } else if (dealer.isBusted()) {
+            System.out.println("You win $" + (bet * 2) + "! (2x payout)");
+            user.addMoney(bet * 2);
+        } else if (userHandValue == dealer.getHand().getValue()) {
+            System.out.println("Push! You get your bet back.");
+            user.addMoney(bet);
+        } else if (userHandValue == BLACKJACK_SCORE) {
+            System.out.println("Blackjack! You win $" + (bet * 3) + "! (3x payout)");
+            user.addMoney(bet * 3);
+        } else if (userHandValue > dealer.getHand().getValue()) {
+            System.out.println("You win $" + (bet * 2) + "! (2x payout)");
+            user.addMoney(bet * 2);
+        } else {
+            System.out.println("Dealer wins! No payout.");
+        }
+    }
 
-        // gives hand info and allows player to hit or stand
-        boolean userTurnActive = true;
-        while (userTurnActive) {
-            Hand userHand = user.getHand();
-            System.out.println("Your hand: " + userHand.toString() + " (" + userHand.getValue() + ")");
-            if (user.isBusted()) {
-                System.out.println("You busted!");
-                userTurnActive = false;
+    private static void doDealerTurn(Player dealer, ArrayList<BlackjackCard> deck) {
+        Hand dealerHand = dealer.getHand();
+        boolean dealerTurnActive = true;
+        while (dealerTurnActive) {
+            printDealerHand(dealerHand, false);
+            if (dealer.isBusted()) {
+                System.out.println("The dealer busted!");
+                dealerTurnActive = false;
                 continue;
             }
+            if (dealerHand.getValue() <= Blackjack.DEALER_HIT_THRESHOLD) {
+                System.out.println("The dealer hits.");
+                dealer.drawCard(deck);
+            } else {
+                System.out.println("The dealer stands.");
+                dealerTurnActive = false;
+            }
+        }
+    }
+
+    private static void printDealerHand(Hand dealerHand, boolean concealLastCard) {
+        if (concealLastCard) {
+            System.out.println("Dealer's hand: " + dealerHand.getCards().getFirst() + ", ?");
+        } else {
+            System.out.println("Dealer's hand: " + dealerHand + " (" + dealerHand.getValue() + ")");
+        }
+    }
+
+    private static boolean doPlayerTurn(Player user, ArrayList<BlackjackCard> deck) {
+        Hand userHand = user.getHand();
+        while (!user.isBusted()) {
+            printUserHand(userHand);
             System.out.println("Would you like to hit or stand? (H/S)");
             switch (scanner.nextLine().toLowerCase()) {
                 case "h": {
@@ -59,49 +100,28 @@ public class Blackjack {
                 break;
                 case "s": {
                     System.out.println("You stand with " + user.getHand().getValue() + ".");
-                    userTurnActive = false;
+                    return false;
                 }
             }
         }
+        System.out.println("Your hand: " + userHand + " (" + userHand.getValue() + ")");
+        return true;
+    }
 
-        // dealer logic
-        boolean dealerTurnActive = true;
-        while (dealerTurnActive) {
-            System.out.print("Dealer's hand: " + dealer.getHand().toString() + " (" + dealer.getHand().getValue() + ")");
-            if (dealer.isBusted()) {
-                System.out.println("The dealer busted!");
-                dealerTurnActive = false;
-                continue;
-            }
-            if (dealer.getHand().getValue() <= Blackjack.DEALER_HIT_THRESHOLD) {
-                System.out.println("The dealer hits.");
-                dealer.drawCard(deck);
-            } else {
-                System.out.println("The dealer stands with " + dealer.getHand().getValue() + ".");
-                dealerTurnActive = false;
-            }
-        }
+    private static void printUserHand(Hand userHand) {
+        System.out.println("Your hand: " + userHand + " (" + userHand.getValue() + ")");
+    }
 
-        if (user.isBusted()) {
-            System.out.println("No payout because you busted.");
-            return;
+    private static int getBet(Player user) {
+        int bet = 0;
+        while (bet <= 0 || bet > user.getMoney()) {
+            System.out.println("You have $" + user.getMoney());
+            System.out.print("Please enter a bet (at least $1): ");
+            bet = scanner.nextInt();
+            scanner.nextLine();
         }
-
-        if (dealer.isBusted()) {
-            System.out.println("You win $" + (bet * 2) + "! (2x payout)");
-            user.addMoney(bet * 2);
-        } else if (user.getHand().getValue() == dealer.getHand().getValue()) {
-            System.out.println("Push! You get your bet back.");
-            user.addMoney(bet);
-        } else if (user.getHand().getValue() == BLACKJACK_SCORE) {
-            System.out.println("main.Casino! You win $" + (bet * 3) + "! (3x payout)");
-            user.addMoney(bet * 3);
-        } else if (user.getHand().getValue() > dealer.getHand().getValue()) {
-            System.out.println("You win $" + (bet * 2) + "! (2x payout)");
-            user.addMoney(bet * 2);
-        } else {
-            System.out.println("Dealer wins! No payout.");
-        }
+        user.removeMoney(bet);
+        return bet;
     }
 
 }

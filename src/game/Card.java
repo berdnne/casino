@@ -37,6 +37,25 @@ public abstract class Card {
 
     @Override
     public String toString() {
-        return rank + " of " + suit;
+        return getRankString() + getSuitString();
+    }
+
+    public String getRankString() {
+        return switch (rank) {
+            case TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN -> String.valueOf(rank.ordinal() + 2);
+            case JACK -> "J";
+            case QUEEN -> "Q";
+            case KING -> "K";
+            case ACE -> "A";
+        };
+    }
+
+    public String getSuitString() {
+        return switch (suit) {
+            case HEARTS -> "♥";
+            case SPADES -> "♠";
+            case CLUBS -> "♣";
+            case DIAMONDS -> "♦";
+        };
     }
 }
